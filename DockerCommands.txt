@@ -1,0 +1,119 @@
+# Docker commands
+
+# MySQL
+docker run --rm --name MySQL-SRV \
+-v /Docker/MySQL/Scripts/Init.sql:/docker-entrypoint-initdb.d/Init.sql \
+-v /Docker/MySQL/Scripts/mysql.cnf:/etc/mysql/conf.d/mysql.cnf \
+-v /Docker/MySQL/Volumes/Data:/var/lib/mysql \
+-e MYSQL_ROOT_PASSWORD=':~D,(A~B?r~1A2ISV<In' \
+--network=InternalNetwork \
+--ip 192.168.0.10 \
+-d mysql:latest
+
+
+# Postgre
+docker run --name Postgres-SRV \
+--detach \
+-e POSTGRES_USER=root \
+-e POSTGRES_PASSWORD=':~D,(A~B?r~1A2ISV<In' \
+-v /Docker/Postgres/Scripts/Init.sh:/docker-entrypoint-initdb.d/Init.sh \
+-v /Docker/Postgres/Scripts/postgresql.conf:/etc/postgresql/postgresql.conf \
+-v /Docker/Postgres/Volumes/Data:/var/lib/postgresql/data \
+--network=InternalNetwork \
+--ip 192.168.0.10 \
+postgres:latest
+
+
+docker run --name GitLab-SRV \
+--detach \
+--restart always \
+--hostname 192.168.0.30 \
+--network=InternalNetwork \
+--ip 192.168.0.30 \
+--publish 443:443 --publish 80:80 --publish 2222:22 \
+--volume /Docker/GitLab/Volumes/Config:/etc/gitlab \
+--volume /Docker/GitLab/Volumes/Logs:/var/log/gitlab \
+--volume /Docker/GitLab/Volumes/Data:/var/opt/gitlab \
+--env GITLAB_OMNIBUS_CONFIG="external_url 'http://192.168.10.66';
+gitlab_rails['initial_root_password'] = 'Test1234';
+postgresql['enable'] = false;
+gitlab_rails['db_adapter'] = 'postgresql';
+gitlab_rails['db_encoding'] = 'unicode';
+gitlab_rails['db_database'] = 'gitlab'
+gitlab_rails['db_password'] = 'oIwhR58Z0spnnez0Ouhj';
+gitlab_rails['db_host'] = '192.168.0.10';
+gitlab_rails['db_port'] = 5432;" \
+gitlab/gitlab-ce:latest
+
+docker network connect bridge GitLab-SRV
+
+docker run --name Nextcloud-SRV \
+--hostname 192.168.0.20
+--network=InternalNetwork \
+--ip 192.168.0.20 \
+--publish 443:443 --publish 80:80 --publish 2222:22 \
+--volume /Docker/Nextcloud/Volumes/Config:/var/www/html/config \
+--volume /Docker/Nextcloud/Volumes/Data:/Nextcloud \
+nextcloud
+
+# Internal Network
+docker network create \
+--internal \
+--subnet 192.168.0.0/24 \
+--label Interal-Network \
+InternalNetwork
+
+
+
+
+# Postgre (test)
+docker run --rm --name Postgres-SRV2 \
+-e POSTGRES_USER=root \
+-e POSTGRES_PASSWORD=':~D,(A~B?r~1A2ISV<In' \
+postgres
+
+
+
+
+
+
+# testing ----------------------------------------------------------------------
+
+# Postgre
+docker run --rm --name Postgres-SRV \
+-e POSTGRES_USER=root \
+-e POSTGRES_PASSWORD=':~D,(A~B?r~1A2ISV<In' \
+-v /Docker/Postgres/Scripts/Init.sh:/docker-entrypoint-initdb.d/Init.sh \
+-v /Docker/Postgres/Scripts/postgresql.conf:/etc/postgresql/postgresql.conf \
+--network=InternalNetwork \
+--ip 192.168.0.10 \
+postgres
+
+docker run --name GitLab-SRV \
+--rm \
+--hostname 192.168.0.30 \
+--network=InternalNetwork \
+--ip 192.168.0.30 \
+--publish 443:443 --publish 80:80 --publish 2222:22 \
+--env GITLAB_OMNIBUS_CONFIG="external_url 'http://192.168.10.66';
+gitlab_rails['initial_root_password'] = 'Test1234';
+postgresql['enable'] = false;
+gitlab_rails['db_adapter'] = 'postgresql';
+gitlab_rails['db_encoding'] = 'unicode';
+gitlab_rails['db_database'] = 'gitlab'
+gitlab_rails['db_password'] = 'oIwhR58Z0spnnez0Ouhj';
+gitlab_rails['db_host'] = '192.168.0.10';
+gitlab_rails['db_port'] = 5432;" \
+gitlab/gitlab-ce:latest
+
+
+
+docker run --rm --name Nextcloud-SRV \
+--tty \
+--detach \
+--hostname "nextcloud-srv" \
+--publish 8080:80 \
+--network=bridge \
+nextcloud
+
+docker network connect InternalNetwork Nextcloud-SRV

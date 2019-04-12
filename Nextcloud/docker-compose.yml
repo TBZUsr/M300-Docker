@@ -1,0 +1,89 @@
+version: "3"
+services:
+  PostgreSQL:
+    container_name: Postgres-SQL
+    image: "postgres:latest"
+    hostname: 'postgres-srv'
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=":~D,(A~B?r~1A2ISV<In"
+    volumes:
+     - /Docker/Postgres/Scripts/Init.sh:/docker-entrypoint-initdb.d/Init.sh
+     - /Docker/Postgres/Scripts/postgresql.conf:/etc/postgresql/postgresql.conf
+     - /Docker/Postgres/Volumes/Data:/var/lib/postgresql/data
+    networks:
+      InternalNetwork:
+        ipv4_address: 192.168.0.10
+        
+  GitLab:
+    container_name: GitLab-SRV
+    image: "gitlab/gitlab-ce:latest"
+    restart: always
+    hostname: 'gitlab-srv'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://192.168.10.66'
+        gitlab_rails['initial_root_password'] = 'Test1234'
+        postgresql['enable'] = false
+        gitlab_rails['db_adapter'] = 'postgresql'
+        gitlab_rails['db_encoding'] = 'unicode'
+        gitlab_rails['db_database'] = 'gitlab'
+        gitlab_rails['db_password'] = 'oIwhR58Z0spnnez0Ouhj'
+        gitlab_rails['db_host'] = '192.168.0.10'
+        gitlab_rails['db_port'] = 5432
+    volumes:
+     - /Docker/Postgres/Scripts/Init.sh:/docker-entrypoint-initdb.d/Init.sh
+     - /Docker/Postgres/Scripts/postgresql.conf:/etc/postgresql/postgresql.conf
+     - /Docker/Postgres/Volumes/Data:/var/lib/postgresql/data
+    ports:
+      - "80:80"
+      - "443:443"
+      - "2222:22"
+    networks:
+      InternalNetwork:
+        ipv4_address: 192.168.0.30
+      default:
+    depends_on:
+      - PostgreSQL
+      
+  nextcloud:
+    container_name: Nextcloud
+    build:
+      context: ./../Nextcloud
+      dockerfile: Dockerfile
+    volumes:
+     - /Docker/Nextcloud/Volumes/Data:/Nextcloud
+     - /Docker/Nextcloud/Volumes/Config:/var/www/html/config
+    ports:
+      - "8080:80"
+      - "8081:443"
+    networks:
+      InternalNetwork:
+        ipv4_address: 192.168.0.20
+      default:
+    depends_on:
+      - PostgreSQL
+      
+      
+  # Only for datatbase testing
+  # pt:
+    # container_name: pt
+    # image: "postgres:latest"
+    # environment:
+      # - POSTGRES_USER=root
+      # - POSTGRES_PASSWORD=":~D,(A~B?r~1A2ISV<In"
+    # volumes:
+     # - /Docker/Postgres/Scripts/Init.sh:/docker-entrypoint-initdb.d/Init.sh
+     # - /Docker/Postgres/Scripts/postgresql.conf:/etc/postgresql/postgresql.conf
+    # # - /Docker/Postgres/Volumes/Data:/var/lib/postgresql/data
+    # networks:
+      # InternalNetwork:
+        # ipv4_address: 192.168.0.40
+      # default:
+     
+networks:
+  InternalNetwork:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 192.168.0.0/24

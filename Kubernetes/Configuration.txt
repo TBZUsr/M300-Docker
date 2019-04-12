@@ -1,0 +1,59 @@
+# Install docker
+
+sudo curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add 
+
+deb http://apt.kubernetes.io/ kubernetes-xenial main
+
+apt-get update
+apt-get install -y kubelet kubeadm kubectl kubernetes-cni
+
+# only on master:
+sudo kubeadm init
+
+# output:
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 192.168.10.66:6443 --token bak941.h5ffyw7s9h04i8ga \
+    --discovery-token-ca-cert-hash sha256:28215a5793468646fd57c84277fb8175ddb604e73eccf24df0e3fdee1d8cfdbf
+
+# only on master (EXIT ROOT FIRST!!!!!):
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+# create network (only on master)
+sudo kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+sudo kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/k8s-manifests/kube-flannel-rbac.yml
+
+
+# only on slave (disable swap)
+sudo swapoff -a
+
+# only on slave (command from output above)
+kubeadm join 192.168.10.66:6443 --token bak941.h5ffyw7s9h04i8ga \
+    --discovery-token-ca-cert-hash sha256:28215a5793468646fd57c84277fb8175ddb604e73eccf24df0e3fdee1d8cfdbf
+
+
+# only on master (deploying service nginx)
+sudo kubectl run --image=nginx nginx-app --port=80 --env="DOMAIN=cluster"
+sudo kubectl expose deployment nginx-app --port=80 --name=nginx-http
+
+
+
+# install dashbord
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/aio/deploy/recommended/kubernetes-dashboard.yaml
+
+# start
+kubectl proxy

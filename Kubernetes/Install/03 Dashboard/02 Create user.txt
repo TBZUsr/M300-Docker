@@ -1,0 +1,11 @@
+kubectl create serviceaccount cluster-admin-dashboard-sa
+kubectl create clusterrolebinding cluster-admin-dashboard-sa --clusterrole=cluster-admin --serviceaccount=default:cluster-admin-dashboard-sa
+
+kubectl get secret | grep cluster-admin-dashboard-sa
+# Output:
+cluster-admin-dashboard-sa-token-6xm8l   kubernetes.io/service-account-token   3         18m
+
+# cluster-admin-dashboard-sa-token-6xm8l = output from above
+kubectl describe secret cluster-admin-dashboard-sa-token-xg6hq
+
+# token = login token

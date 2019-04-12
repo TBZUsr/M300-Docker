@@ -1,0 +1,1 @@
+kubectl expose deployment nginx-deployment --type=LoadBalancer --name=nginx-service --port=80 --target-port=80 --protocol=TCP --external-ip 192.168.10.67
